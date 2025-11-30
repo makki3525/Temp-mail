@@ -129,6 +129,38 @@ app.get('/chkmail', async (req, res) => {
   }
 });
 
+// get full email content by ID
+app.get('/getmailbyid', async (req, res) => {
+  const { mail, id } = req.query;
+  if (!mail || !id) return res.status(400).send('Missing mail or id parameter');
+
+  try {
+    const response = await axios.get(`https://www.disposablemail.com/email/id/${id}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Cookie': `TMA=${encodeURIComponent(mail)}`,
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Upgrade-Insecure-Requests': '1',
+        'Referer': 'https://www.disposablemail.com/'
+      },
+      decompress: true
+    });
+
+    // Return the full HTML content of the email
+    res.set('Content-Type', 'text/html');
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error fetching email content:', error.message);
+    res.status(500).send('Failed to fetch email content');
+  }
+});
+
 // delete mail route
 app.get('/delete', async (req, res) => {
   const { mail, id } = req.query;
@@ -182,10 +214,12 @@ app.get('/', (req, res) => {
         <li><strong>GET <code>/getmail</code></strong> – Generate a random email address</li>
         <li><strong>GET <code>/getmail?name=yourname</code></strong> – Generate a custom email if available</li>
         <li><strong>GET <code>/chkmail?mail=encoded_mail</code></strong> – Check inbox for received messages</li>
+        <li><strong>GET <code>/getmailbyid?mail=encoded_mail&id=message_id</code></strong> – Get full email content by message ID</li>
         <li><strong>GET <code>/delete?mail=encoded_mail&id=msgid</code></strong> – Delete a specific mail by ID</li>
       </ul>
       <h4>Example:</h4>
       <pre><code>/getmail?name=soumyaTest</code></pre>
+      <pre><code>/getmailbyid?mail=laramie.kaian%40dropmeon.com&id=2</code></pre>
     </body>
     </html>
   `);
