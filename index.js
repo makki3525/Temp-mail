@@ -1,10 +1,8 @@
 const express = require('express');
 const axios = require('axios');
-const path = require('path');
 const app = express();
 
 app.use(express.json());
-app.use(express.static('public')); // Serve static files from 'public' folder
 
 // Middleware to append WhatsApp channel link to all JSON responses
 app.use((req, res, next) => {
@@ -18,6 +16,9 @@ app.use((req, res, next) => {
   };
   next();
 });
+
+// Serve static files
+app.use(express.static('public'));
 
 // For custom mail create (if name given)
 async function getCustomMail(name) {
@@ -94,8 +95,8 @@ async function getDefaultMail() {
   };
 }
 
-// API Endpoints
-app.get('/api/getmail', async (req, res) => {
+// Create mail route
+app.get('/getmail', async (req, res) => {
   try {
     const name = req.query.name;
     if (name) {
@@ -107,13 +108,14 @@ app.get('/api/getmail', async (req, res) => {
       return res.json(data);
     }
   } catch {
-    res.status(500).send('Failed to generate mail');
+    res.status(500).json({ error: 'Failed to generate mail' });
   }
 });
 
-app.get('/api/chkmail', async (req, res) => {
+// Check inbox route
+app.get('/chkmail', async (req, res) => {
   const mail = req.query.mail;
-  if (!mail) return res.status(400).send('Missing mail query parameter');
+  if (!mail) return res.status(400).json({ error: 'Missing mail query parameter' });
 
   try {
     const response = await axios.get('https://www.disposablemail.com/index/refresh', {
@@ -131,17 +133,21 @@ app.get('/api/chkmail', async (req, res) => {
     });
 
     // Filter out the welcome mail
-    const filteredMails = response.data.filter(mail => mail.predmet !== "Welcome to DisposableMail:)");
-
-    res.json(filteredMails);
+    let emails = response.data;
+    if (Array.isArray(emails)) {
+      emails = emails.filter(email => !email.predmet?.includes('Welcome to DisposableMail'));
+    }
+    
+    res.json(emails);
   } catch {
-    res.status(500).send('Failed to check mail');
+    res.status(500).json({ error: 'Failed to check mail' });
   }
 });
 
-app.get('/api/getmailbyid', async (req, res) => {
+// Get full email content by ID
+app.get('/getmailbyid', async (req, res) => {
   const { mail, id } = req.query;
-  if (!mail || !id) return res.status(400).send('Missing mail or id parameter');
+  if (!mail || !id) return res.status(400).json({ error: 'Missing mail or id parameter' });
 
   try {
     const response = await axios.get(`https://www.disposablemail.com/email/id/${id}`, {
@@ -161,17 +167,17 @@ app.get('/api/getmailbyid', async (req, res) => {
       decompress: true
     });
 
-    res.set('Content-Type', 'text/html');
-    res.send(response.data);
+    res.json({ html: response.data });
   } catch (error) {
     console.error('Error fetching email content:', error.message);
-    res.status(500).send('Failed to fetch email content');
+    res.status(500).json({ error: 'Failed to fetch email content' });
   }
 });
 
-app.get('/api/delete', async (req, res) => {
+// Delete mail route
+app.get('/delete', async (req, res) => {
   const { mail, id } = req.query;
-  if (!mail || !id) return res.status(400).send('Missing mail or id');
+  if (!mail || !id) return res.status(400).json({ error: 'Missing mail or id' });
 
   try {
     const delRes = await axios.post(`https://www.disposablemail.com/delete-email/${id}`,
@@ -190,15 +196,58 @@ app.get('/api/delete', async (req, res) => {
       }
     );
 
-    res.send(delRes.data);
+    res.json({ success: true });
   } catch {
-    res.status(500).send('Failed to delete mail');
+    res.status(500).json({ error: 'Failed to delete mail' });
   }
 });
 
-// Serve index.html for all other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// API documentation
+app.get('/api-docs', (req, res) => {
+  res.json({
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/getmail',
+        description: 'Generate a random email address',
+        parameters: [
+          { name: 'name', optional: true, description: 'Custom name for email (e.g., yourname)' }
+        ]
+      },
+      {
+        method: 'GET',
+        path: '/chkmail',
+        description: 'Check inbox for received messages',
+        parameters: [
+          { name: 'mail', required: true, description: 'Email address to check' }
+        ]
+      },
+      {
+        method: 'GET',
+        path: '/getmailbyid',
+        description: 'Get full email content by message ID',
+        parameters: [
+          { name: 'mail', required: true, description: 'Email address' },
+          { name: 'id', required: true, description: 'Message ID' }
+        ]
+      },
+      {
+        method: 'GET',
+        path: '/delete',
+        description: 'Delete a specific mail by ID',
+        parameters: [
+          { name: 'mail', required: true, description: 'Email address' },
+          { name: 'id', required: true, description: 'Message ID' }
+        ]
+      }
+    ]
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;
