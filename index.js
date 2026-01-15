@@ -796,7 +796,7 @@ app.get('/', (req, res) => {
 
         <footer>
             <p>Join our <a href="https://whatsapp.com/channel/0029Vb901QrFy724Izy9Wn0m" target="_blank">WhatsApp Channel</a> for updates</p>
-            <p>This service uses disposablemail.com for email generation</p>
+            
         </footer>
     </div>
 
