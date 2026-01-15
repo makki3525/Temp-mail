@@ -1,15 +1,21 @@
-//index.js
-/*
-Temp mail api using https://www.disposablemail.com
-credit : https://github.com/Soumyadeep765
-Repo : https://github.com/Soumyadeep765/Temp-mail/
-*/
-
 const express = require('express');
 const axios = require('axios');
 const app = express();
 
 app.use(express.json());
+
+// Middleware to append WhatsApp channel link to all JSON responses
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function (data) {
+    const response = {
+      data: data,
+      whatsapp_channel: "https://whatsapp.com/channel/0029Vb901QrFy724Izy9Wn0m"
+    };
+    originalJson.call(this, response);
+  };
+  next();
+});
 
 // For custom mail create (if name given)
 async function getCustomMail(name) {
@@ -82,7 +88,7 @@ async function getDefaultMail() {
 
   return {
     email: inboxRes.data?.email || null,
-    password: inboxRes.data?.heslo || null, // Password if needed , have no idea how to use pass 🙂
+    password: inboxRes.data?.heslo || null,
   };
 }
 
@@ -152,7 +158,6 @@ app.get('/getmailbyid', async (req, res) => {
       decompress: true
     });
 
-    // Return the full HTML content of the email
     res.set('Content-Type', 'text/html');
     res.send(response.data);
   } catch (error) {
@@ -209,6 +214,7 @@ app.get('/', (req, res) => {
     <body>
       <h1>Disposable Mail API</h1>
       <p>This API allows you to generate disposable email addresses and check their inbox.</p>
+      <p>Join our WhatsApp channel: <a href="https://whatsapp.com/channel/0029Vb901QrFy724Izy9Wn0m">here</a></p>
       <h3>Endpoints:</h3>
       <ul>
         <li><strong>GET <code>/getmail</code></strong> – Generate a random email address</li>
