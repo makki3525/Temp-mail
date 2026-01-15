@@ -213,13 +213,13 @@ app.get('/', (req, res) => {
       <ul>
         <li><strong>GET <code>/getmail</code></strong> – Generate a random email address</li>
         <li><strong>GET <code>/getmail?name=yourname</code></strong> – Generate a custom email if available</li>
-        <li><strong>GET <code>/chkmail?mail=encoded_mail</code></strong> – Check inbox for received messages</li>
-        <li><strong>GET <code>/getmailbyid?mail=encoded_mail&id=message_id</code></strong> – Get full email content by message ID</li>
-        <li><strong>GET <code>/delete?mail=encoded_mail&id=msgid</code></strong> – Delete a specific mail by ID</li>
+        <li><strong>GET <code>/chkmail?mail=used_mail</code></strong> – Check inbox for received messages</li>
+        <li><strong>GET <code>/getmailbyid?mail=used_mail&id=message_id</code></strong> – Get full email content by message ID</li>
+        <li><strong>GET <code>/delete?mail=usedmail&id=msgid</code></strong> – Delete a specific mail by ID</li>
       </ul>
       <h4>Example:</h4>
-      <pre><code>/getmail?name=soumyaTest</code></pre>
-      <pre><code>/getmailbyid?mail=laramie.kaian%40dropmeon.com&id=2</code></pre>
+      <pre><code>/getmail?name=makkibro</code></pre>
+      <pre><code>/getmailbyid?mail=laramie.kaiandropmeon.com&id=2</code></pre>
     </body>
     </html>
   `);
