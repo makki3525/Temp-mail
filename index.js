@@ -1,8 +1,10 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 
 app.use(express.json());
+app.use(express.static('public')); // Serve static files from 'public' folder
 
 // Middleware to append WhatsApp channel link to all JSON responses
 app.use((req, res, next) => {
@@ -92,8 +94,8 @@ async function getDefaultMail() {
   };
 }
 
-// create mail route
-app.get('/getmail', async (req, res) => {
+// API Endpoints
+app.get('/api/getmail', async (req, res) => {
   try {
     const name = req.query.name;
     if (name) {
@@ -109,8 +111,7 @@ app.get('/getmail', async (req, res) => {
   }
 });
 
-// check inbox route
-app.get('/chkmail', async (req, res) => {
+app.get('/api/chkmail', async (req, res) => {
   const mail = req.query.mail;
   if (!mail) return res.status(400).send('Missing mail query parameter');
 
@@ -129,14 +130,16 @@ app.get('/chkmail', async (req, res) => {
       }
     });
 
-    res.json(response.data);
+    // Filter out the welcome mail
+    const filteredMails = response.data.filter(mail => mail.predmet !== "Welcome to DisposableMail:)");
+
+    res.json(filteredMails);
   } catch {
     res.status(500).send('Failed to check mail');
   }
 });
 
-// get full email content by ID
-app.get('/getmailbyid', async (req, res) => {
+app.get('/api/getmailbyid', async (req, res) => {
   const { mail, id } = req.query;
   if (!mail || !id) return res.status(400).send('Missing mail or id parameter');
 
@@ -166,8 +169,7 @@ app.get('/getmailbyid', async (req, res) => {
   }
 });
 
-// delete mail route
-app.get('/delete', async (req, res) => {
+app.get('/api/delete', async (req, res) => {
   const { mail, id } = req.query;
   if (!mail || !id) return res.status(400).send('Missing mail or id');
 
@@ -194,41 +196,9 @@ app.get('/delete', async (req, res) => {
   }
 });
 
-// welcome info page
-app.get('/', (req, res) => {
-  res.setHeader('Content-Type', 'text/html');
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-      <title>Disposable Mail API</title>
-      <style>
-        body { font-family: Arial, sans-serif; background: #f9f9f9; color: #333; padding: 2rem; }
-        h1 { color: #444; }
-        code { background: #eee; padding: 2px 6px; border-radius: 4px; }
-        ul { line-height: 1.8; }
-      </style>
-    </head>
-    <body>
-      <h1>Disposable Mail API</h1>
-      <p>This API allows you to generate disposable email addresses and check their inbox.</p>
-      <p>Join our WhatsApp channel: <a href="https://whatsapp.com/channel/0029Vb901QrFy724Izy9Wn0m">here</a></p>
-      <h3>Endpoints:</h3>
-      <ul>
-        <li><strong>GET <code>/getmail</code></strong> – Generate a random email address</li>
-        <li><strong>GET <code>/getmail?name=yourname</code></strong> – Generate a custom email if available</li>
-        <li><strong>GET <code>/chkmail?mail=used_mail</code></strong> – Check inbox for received messages</li>
-        <li><strong>GET <code>/getmailbyid?mail=used_mail&id=message_id</code></strong> – Get full email content by message ID</li>
-        <li><strong>GET <code>/delete?mail=usedmail&id=msgid</code></strong> – Delete a specific mail by ID</li>
-      </ul>
-      <h4>Example:</h4>
-      <pre><code>/getmail?name=makkibro</code></pre>
-      <pre><code>/getmailbyid?mail=laramie.kaiandropmeon.com&id=2</code></pre>
-    </body>
-    </html>
-  `);
+// Serve index.html for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 module.exports = app;
